@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Éditeur CV - ATS Compatible</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&family=Raleway:wght@600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;
+  --text:#1a1a18;--muted:#6b6b65;--accent:#2c5f2e;
+  --accent-light:#e8f0e8;--danger:#b84444;--radius:8px;
+  --font-ui:'Segoe UI',system-ui,sans-serif;
+}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* Layout */
+.app{display:flex;height:100vh;overflow:hidden}
+.editor{width:42%;min-width:320px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.preview-pane{flex:1;background:var(--bg);overflow-y:auto;padding:24px;display:flex;flex-direction:column;align-items:center}
+
+/* Editor header */
+.editor-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#1a1a18}
+.editor-header h1{font-size:13px;font-weight:600;color:#fff;letter-spacing:.5px;text-transform:uppercase}
+.editor-tabs{display:flex;gap:2px}
+.tab-btn{padding:5px 12px;border:none;border-radius:4px;font-size:12px;cursor:pointer;font-weight:500;background:transparent;color:#9a9a94;transition:all .15s}
+.tab-btn.active{background:var(--accent);color:#fff}
+
+/* Section nav */
+.section-nav{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px;background:#f8f7f3}
+.nav-pill{padding:3px 10px;border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:pointer;background:#fff;color:var(--muted);transition:all .15s;white-space:nowrap}
+.nav-pill.active,.nav-pill:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+
+/* Editor body */
+.editor-body{flex:1;overflow-y:auto;padding:16px 20px}
+.field-group{margin-bottom:18px}
+.field-group label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.field-group input,.field-group textarea,.field-group select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;color:var(--text);background:#fff;transition:border .15s}
+.field-group input:focus,.field-group textarea:focus{outline:none;border-color:var(--accent)}
+.field-group textarea{resize:vertical;line-height:1.5}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Section title */
+.section-title{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--accent-light)}
+
+/* Entry card */
+.entry-card{background:#f8f7f3;border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;position:relative}
+.entry-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.entry-card-title{font-size:12px;font-weight:600;color:var(--text)}
+.entry-actions{display:flex;gap:4px}
+.btn-icon{width:26px;height:26px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s}
+.btn-icon:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.btn-icon.danger:hover{background:#fef0f0;border-color:var(--danger);color:var(--danger)}
+
+/* Bullets editor */
+.bullets-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.bullet-row{display:flex;gap:6px;margin-bottom:5px;align-items:flex-start}
+.bullet-row textarea{flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;font-family:inherit;line-height:1.4;resize:none;min-height:50px}
+.bullet-row textarea:focus{outline:none;border-color:var(--accent)}
+.btn-add{width:100%;padding:7px;border:1px dashed var(--border);border-radius:4px;background:transparent;cursor:pointer;font-size:12px;color:var(--muted);text-align:center;transition:all .15s;margin-top:4px}
+.btn-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+
+/* Skill chip row */
+.skill-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
+.skill-row input{flex:1}
+.skill-cat{width:110px;font-size:12px;color:var(--muted);font-weight:600}
+
+/* Visibility toggles */
+.visibility-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.visibility-row:last-child{border:none}
+.visibility-label{font-size:13px;font-weight:500}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:#d0cfc8;border-radius:10px;transition:.2s}
+.toggle input:checked + .toggle-track{background:var(--accent)}
+.toggle-thumb{position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;left:2px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked ~ .toggle-thumb{left:18px}
+
+/* Action buttons */
+.editor-actions{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px}
+.btn{padding:8px 16px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;border:1px solid;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#245026}
+.btn-secondary{background:#fff;color:var(--text);border-color:var(--border)}
+.btn-secondary:hover{background:var(--bg)}
+
+/* ======================== */
+/* CV PREVIEW               */
+/* ======================== */
+.cv-container{width:100%;max-width:680px;background:#fff;box-shadow:0 2px 20px rgba(0,0,0,.08);border-radius:4px;overflow:hidden}
+.cv-body{padding:36px 44px;font-family:'Lato',sans-serif}
+
+/* ATS: Name & title */
+.cv-name{font-size:26px;font-weight:700;color:#111;letter-spacing:-.3px;line-height:1.1;margin-bottom:3px;font-family:'Raleway',sans-serif}
+.cv-title{font-size:13px;color:#555;font-weight:400;margin-bottom:10px;font-style:italic}
+.cv-contact{font-size:11.5px;color:#444;line-height:1.8;margin-bottom:0}
+.cv-contact-row{display:flex;flex-wrap:wrap;gap:4px 20px}
+.cv-contact-item::before{content:'• ';color:#ff0000}
+.cv-contact-item:first-child::before{content:''}
+
+/* Section */
+.cv-section{margin-top:22px}
+.cv-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#111;border-bottom:1.5px solid #111;padding-bottom:3px;margin-bottom:10px;font-family:'Raleway',sans-serif}
+.cv-summary{font-size:12px;line-height:1.7;color:#333;text-align:justify}
+
+/* Experience */
+.cv-exp{margin-bottom:14px}
+.cv-exp-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1px}
+.cv-exp-title{font-size:13px;font-weight:700;color:#111}
+.cv-exp-dates{font-size:11px;color:#555;white-space:nowrap;margin-left:8px}
+.cv-exp-company{font-size:12px;color:#444;margin-bottom:4px;font-style:italic}
+.cv-bullets{margin:4px 0 0 14px;padding:0}
+.cv-bullets li{font-size:11.5px;line-height:1.6;color:#333;margin-bottom:2px;text-align:justify}
+
+/* Skills */
+.cv-skill-row{display:flex;font-size:11.5px;line-height:1.7;margin-bottom:2px}
+.cv-skill-cat{font-weight:700;min-width:110px;color:#111}
+.cv-skill-items{color:#333}
+
+/* Edu */
+.cv-edu{margin-bottom:10px}
+.cv-edu-header{display:flex;justify-content:space-between;align-items:baseline}
+.cv-edu-school{font-size:13px;font-weight:700;color:#111}
+.cv-edu-dates{font-size:11px;color:#555}
+.cv-edu-degree{font-size:12px;color:#444;font-style:italic}
+
+/* Certif */
+.cv-certif{font-size:11.5px;line-height:1.7;color:#333}
+.cv-certif strong{color:#111;font-weight:700}
+
+/* Preview toolbar */
+.preview-toolbar{width:100%;max-width:680px;display:flex;gap:8px;margin-bottom:12px;align-items:center;justify-content:space-between}
+.preview-toolbar-left{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.preview-toolbar-right{display:flex;gap:8px}
+.ats-badge{font-size:10px;background:#e8f0e8;color:var(--accent);border:1px solid #c5d9c5;border-radius:4px;padding:2px 8px;font-weight:700;letter-spacing:.5px}
+
+/* Print */
+@page{size:A4;margin:12mm 14mm}
+@media print{
+  html,body{width:100%;margin:0;padding:0}
+  .app{display:block;width:100%}
+  .editor,.preview-toolbar{display:none!important}
+  .preview-pane{padding:0;background:#fff;display:block;width:100%;align-items:flex-start}
+  .cv-container{box-shadow:none;border-radius:0;width:100%;max-width:100%}
+  .cv-body{padding:0}
+  .cv-name{font-size:22px}
+  .cv-title{font-size:12px;margin-bottom:8px}
+  .cv-contact{font-size:11px}
+  .cv-section{margin-top:14px}
+  .cv-section-title{font-size:11px;margin-bottom:7px;padding-bottom:2px}
+  .cv-summary{font-size:11px;line-height:1.6}
+  .cv-exp{margin-bottom:10px}
+  .cv-exp-title{font-size:12px}
+  .cv-exp-company{font-size:11px;margin-bottom:3px}
+  .cv-exp-dates{font-size:10.5px}
+  .cv-bullets{margin:3px 0 0 14px}
+  .cv-bullets li{font-size:11px;line-height:1.55;margin-bottom:2px}
+  .cv-skill-row{font-size:11px;line-height:1.6}
+  .cv-skill-cat{min-width:100px}
+  .cv-edu{margin-bottom:8px}
+  .cv-edu-school{font-size:12px}
+  .cv-edu-degree{font-size:11px}
+  .cv-edu-dates{font-size:10.5px}
+  .cv-certif{font-size:11px}
+}
+
+/* Responsive */
+@media (max-width:700px){
+  .app{flex-direction:column;height:auto}
+  .editor{width:100%;height:auto;max-height:none}
+  .preview-pane{padding:16px}
+  .cv-body{padding:20px 20px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ===== EDITOR ===== -->
+<div class="editor">
+  <div class="editor-header">
+    <h1>Éditeur CV</h1>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span class="ats-badge">✓ ATS</span>
+    </div>
+  </div>
+
+  <div class="section-nav" id="sectionNav"></div>
+
+  <div class="editor-body" id="editorBody"></div>
+
+  <div class="editor-actions">
+    <button class="btn btn-primary" onclick="window.print()">🖨 Imprimer / PDF</button>
+    <button class="btn btn-secondary" onclick="copyAtsText()">📋 Copier texte brut</button>
+    <button class="btn btn-secondary" style="color:#b84444;border-color:#e8c0c0" onclick="if(confirm('Effacer toutes les données et repartir de zéro ?')){localStorage.removeItem('cv_editor_state_v1');location.reload();}">↺</button>
+  </div>
+</div>
+
+<!-- ===== PREVIEW ===== -->
+<div class="preview-pane">
+  <div class="preview-toolbar">
+    <span class="preview-toolbar-left">Aperçu en direct</span>
+    <div class="preview-toolbar-right">
+      <span class="ats-badge">✓ Compatible ATS</span>
+    </div>
+  </div>
+  <div class="cv-container">
+    <div class="cv-body" id="cvPreview"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ==============================
+// STATE
+// ==============================
+let state = {
+  personal: {
+    name: "Prénom Nom",
+    title: "Développeur VR | Futur BI Analyst",
+    email: "prenom.nom@email.com",
+    phone: "06 XX XX XX XX",
+    location: "Paris, France",
+    linkedin: "linkedin.com/in/votreprofil",
+    github: ""
+  },
+  summary: "Étudiant en informatique à Epitech en alternance en tant que développeur VR, je me reconvertis vers les métiers de la Business Intelligence et de l'analyse de données. Reconnu pour mes qualités de communication et de vulgarisation technique, j'ai accompagné des équipes commerciales lors de démonstrations clients en salon et en entreprise. Mon background dev me confère une approche structurée et analytique, que je mets au service de la data.",
+  experiences: [
+    {id:1, company:"Nom de l'entreprise", title:"Développeur VR - Alternant", location:"Paris", start:"Sept. 2023", end:"Présent",
+     bullets:["Développement d'applications VR pour des clients entreprises (secteurs industrie, formation)","Accompagnement des équipes lors de démonstrations produits en salons professionnels et en clientèle directe","Vulgarisation des aspects techniques auprès des profils commerciaux et des décideurs non-techniques","Contribution à la conception de scénarios d'expérience utilisateur (UX) en réalité virtuelle"]}
+  ],
+  education: [
+    {id:1, school:"Epitech - École Européenne d'Informatique", degree:"Expert en Technologies de l'Information (Bac+5)", location:"Paris", start:"2021", end:"2026"}
+  ],
+  skills: [
+    {id:1, category:"Développement", items:"C++, Python, Git / GitHub, Unity, Unreal Engine"},
+    {id:2, category:"Communication", items:"Présentation client, vulgarisation technique, démonstration produit, animation de réunion"},
+    {id:3, category:"Data (en cours)", items:"SQL (apprentissage), Power BI (apprentissage)"},
+    {id:4, category:"Langues", items:"Français (natif), Anglais (B2)"}
+  ],
+  certifications: [
+    {id:1, name:"HackerRank SQL Certificate", issuer:"HackerRank", date:"2024"},
+  ],
+  visibility: {
+    summary: true,
+    experiences: true,
+    education: true,
+    skills: true,
+    certifications: true
+  },
+  activeSection: "personal"
+};
+
+// ==============================
+// SECTION CONFIG
+// ==============================
+const sections = [
+  {key:"personal", label:"Profil"},
+  {key:"summary", label:"Résumé"},
+  {key:"experiences", label:"Expériences"},
+  {key:"education", label:"Formation"},
+  {key:"skills", label:"Compétences"},
+  {key:"certifications", label:"Certifications"},
+  {key:"settings", label:"Sections"}
+];
+
+// ==============================
+// EDITOR RENDERING
+// ==============================
+function renderNav(){
+  const nav = document.getElementById('sectionNav');
+  nav.innerHTML = sections.map(s =>
+    `<span class="nav-pill ${state.activeSection===s.key?'active':''}" onclick="setSection('${s.key}')">${s.label}</span>`
+  ).join('');
+}
+
+function setSection(key){
+  state.activeSection = key;
+  saveState();
+  renderNav();
+  renderEditor();
+}
+
+function renderEditor(){
+  const body = document.getElementById('editorBody');
+  body.innerHTML = '';
+  const k = state.activeSection;
+  if(k==='personal') body.innerHTML = renderPersonal();
+  else if(k==='summary') body.innerHTML = renderSummary();
+  else if(k==='experiences') body.innerHTML = renderExperiences();
+  else if(k==='education') body.innerHTML = renderEducation();
+  else if(k==='skills') body.innerHTML = renderSkills();
+  else if(k==='certifications') body.innerHTML = renderCertifications();
+  else if(k==='settings') body.innerHTML = renderSettings();
+}
+
+function renderPersonal(){
+  const p = state.personal;
+  return `<div class="section-title">Informations personnelles</div>
+  <div class="field-group"><label>Nom complet</label><input value="${esc(p.name)}" oninput="state.personal.name=this.value;renderPreview()"></div>
+  <div class="field-group"><label>Titre / Accroche</label><input value="${esc(p.title)}" oninput="state.personal.title=this.value;renderPreview()"></div>
+  <div class="row-2">
+    <div class="field-group"><label>Email</label><input value="${esc(p.email)}" oninput="state.personal.email=this.value;renderPreview()"></div>
+    <div class="field-group"><label>Téléphone</label><input value="${esc(p.phone)}" oninput="state.personal.phone=this.value;renderPreview()"></div>
+  </div>
+  <div class="row-2">
+    <div class="field-group"><label>Ville</label><input value="${esc(p.location)}" oninput="state.personal.location=this.value;renderPreview()"></div>
+    <div class="field-group"><label>LinkedIn (URL)</label><input value="${esc(p.linkedin)}" oninput="state.personal.linkedin=this.value;renderPreview()"></div>
+  </div>
+  <div class="field-group"><label>GitHub (optionnel)</label><input value="${esc(p.github)}" oninput="state.personal.github=this.value;renderPreview()"></div>`;
+}
+
+function renderSummary(){
+  return `<div class="section-title">Profil / Résumé</div>
+  <div class="field-group"><label>Accroche (3-5 lignes max)</label>
+  <textarea rows="6" oninput="state.summary=this.value;renderPreview()">${esc(state.summary)}</textarea></div>
+  <p style="font-size:11px;color:var(--muted);line-height:1.6">💡 <strong>Conseil ATS :</strong> Intégrez des mots-clés du poste visé (ex. "Business Intelligence", "SQL", "data analyst", "Power BI", "dashboard").</p>`;
+}
+
+function renderExperiences(){
+  const exps = state.experiences;
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="section-title" style="margin:0">Expériences</div>
+    <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="addExp()">+ Ajouter</button>
+  </div>`;
+  exps.forEach((exp,i) => {
+    html += `<div class="entry-card">
+      <div class="entry-card-header">
+        <span class="entry-card-title">${esc(exp.company)||'Nouvelle expérience'}</span>
+        <div class="entry-actions">
+          ${i>0?`<button class="btn-icon" onclick="moveExp(${i},-1)" title="Monter">↑</button>`:''}
+          ${i<exps.length-1?`<button class="btn-icon" onclick="moveExp(${i},1)" title="Descendre">↓</button>`:''}
+          <button class="btn-icon danger" onclick="removeExp(${i})" title="Supprimer">×</button>
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field-group"><label>Entreprise</label><input value="${esc(exp.company)}" oninput="state.experiences[${i}].company=this.value;rerenderExpCard(${i})"></div>
+        <div class="field-group"><label>Poste</label><input value="${esc(exp.title)}" oninput="state.experiences[${i}].title=this.value;rerenderExpCard(${i})"></div>
+      </div>
+      <div class="row-2">
+        <div class="field-group"><label>Début</label><input value="${esc(exp.start)}" oninput="state.experiences[${i}].start=this.value;rerenderExpCard(${i})"></div>
+        <div class="field-group"><label>Fin</label><input value="${esc(exp.end)}" placeholder="Présent" oninput="state.experiences[${i}].end=this.value;rerenderExpCard(${i})"></div>
+      </div>
+      <div class="field-group"><label>Lieu (optionnel)</label><input value="${esc(exp.location)}" oninput="state.experiences[${i}].location=this.value;rerenderExpCard(${i})"></div>
+      <div class="bullets-label">Missions</div>
+      ${exp.bullets.map((b,bi) => `
+        <div class="bullet-row" style="align-items:center;gap:4px">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <button class="btn-icon" onclick="moveBullet(${i},${bi},-1)" ${bi===0?'disabled style="opacity:.3"':''}title="Monter">↑</button>
+            <button class="btn-icon" onclick="moveBullet(${i},${bi},1)" ${bi===exp.bullets.length-1?'disabled style="opacity:.3"':''}title="Descendre">↓</button>
+          </div>
+          <textarea style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;font-family:inherit;line-height:1.4;resize:none;min-height:50px"
+            oninput="state.experiences[${i}].bullets[${bi}]=this.value;renderPreview()">${esc(b)}</textarea>
+          <button class="btn-icon danger" onclick="removeBullet(${i},${bi})">×</button>
+        </div>`).join('')}
+      <button class="btn-add" onclick="addBullet(${i})">+ Ajouter une mission</button>
+    </div>`;
+  });
+  return html;
+}
+
+function rerenderExpCard(i){ renderPreview(); }
+
+function renderEducation(){
+  const edu = state.education;
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="section-title" style="margin:0">Formation</div>
+    <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="addEdu()">+ Ajouter</button>
+  </div>`;
+  edu.forEach((e,i) => {
+    html += `<div class="entry-card">
+      <div class="entry-card-header">
+        <span class="entry-card-title">${esc(e.school)||'Nouvelle formation'}</span>
+        <div class="entry-actions">
+          <button class="btn-icon danger" onclick="removeEdu(${i})">×</button>
+        </div>
+      </div>
+      <div class="field-group"><label>Établissement</label><input value="${esc(e.school)}" oninput="state.education[${i}].school=this.value;renderPreview()"></div>
+      <div class="field-group"><label>Diplôme / Spécialité</label><input value="${esc(e.degree)}" oninput="state.education[${i}].degree=this.value;renderPreview()"></div>
+      <div class="row-2">
+        <div class="field-group"><label>Début</label><input value="${esc(e.start)}" oninput="state.education[${i}].start=this.value;renderPreview()"></div>
+        <div class="field-group"><label>Fin</label><input value="${esc(e.end)}" oninput="state.education[${i}].end=this.value;renderPreview()"></div>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+function renderSkills(){
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="section-title" style="margin:0">Compétences</div>
+    <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="addSkill()">+ Catégorie</button>
+  </div>
+  <p style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">💡 <strong>ATS :</strong> Listez les mots-clés exacts de l'offre (SQL, Power BI, DAX, Tableau…)</p>`;
+  state.skills.forEach((s,i) => {
+    html += `<div class="entry-card" style="padding:10px">
+      <div class="skill-row">
+        <input placeholder="Catégorie" value="${esc(s.category)}" oninput="state.skills[${i}].category=this.value;renderPreview()" style="width:130px;margin-right:8px">
+        <input placeholder="Item 1, Item 2, Item 3…" value="${esc(s.items)}" oninput="state.skills[${i}].items=this.value;renderPreview()" style="flex:1">
+        <button class="btn-icon danger" onclick="removeSkill(${i})" style="margin-left:6px">×</button>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+function renderCertifications(){
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="section-title" style="margin:0">Certifications</div>
+    <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="addCertif()">+ Ajouter</button>
+  </div>`;
+  state.certifications.forEach((c,i) => {
+    html += `<div class="entry-card">
+      <div class="entry-card-header">
+        <span class="entry-card-title">${esc(c.name)||'Nouvelle certification'}</span>
+        <button class="btn-icon danger" onclick="removeCertif(${i})">×</button>
+      </div>
+      <div class="row-2">
+        <div class="field-group"><label>Nom de la certification</label><input value="${esc(c.name)}" oninput="state.certifications[${i}].name=this.value;renderPreview()"></div>
+        <div class="field-group"><label>Émetteur</label><input value="${esc(c.issuer)}" oninput="state.certifications[${i}].issuer=this.value;renderPreview()"></div>
+      </div>
+      <div class="field-group"><label>Date d'obtention</label><input value="${esc(c.date)}" oninput="state.certifications[${i}].date=this.value;renderPreview()"></div>
+    </div>`;
+  });
+  return html;
+}
+
+function renderSettings(){
+  const labels = {summary:"Résumé / Profil", experiences:"Expériences", education:"Formation", skills:"Compétences", certifications:"Certifications"};
+  let html = `<div class="section-title">Sections visibles</div>`;
+  Object.entries(labels).forEach(([key,label]) => {
+    const checked = state.visibility[key];
+    html += `<div class="visibility-row">
+      <span class="visibility-label">${label}</span>
+      <label class="toggle">
+        <input type="checkbox" ${checked?'checked':''} onchange="state.visibility['${key}']=this.checked;renderPreview()">
+        <span class="toggle-track"></span>
+        <span class="toggle-thumb"></span>
+      </label>
+    </div>`;
+  });
+  return html;
+}
+
+// ==============================
+// DATA MUTATIONS
+// ==============================
+function addExp(){
+  const id = Date.now();
+  state.experiences.push({id,company:"",title:"",location:"",start:"",end:"",bullets:[""]});
+  renderEditor(); renderPreview();
+}
+function removeExp(i){ state.experiences.splice(i,1); renderEditor(); renderPreview(); }
+function moveExp(i,dir){ const a=state.experiences; [a[i],a[i+dir]]=[a[i+dir],a[i]]; renderEditor(); renderPreview(); }
+function addBullet(i){ state.experiences[i].bullets.push(""); renderEditor(); }
+function removeBullet(i,bi){ state.experiences[i].bullets.splice(bi,1); renderEditor(); renderPreview(); }
+function moveBullet(i,bi,dir){ const b=state.experiences[i].bullets; const t=bi+dir; if(t<0||t>=b.length)return; [b[bi],b[t]]=[b[t],b[bi]]; renderEditor(); renderPreview(); }
+
+function addEdu(){
+  state.education.push({id:Date.now(),school:"",degree:"",location:"",start:"",end:""});
+  renderEditor(); renderPreview();
+}
+function removeEdu(i){ state.education.splice(i,1); renderEditor(); renderPreview(); }
+
+function addSkill(){
+  state.skills.push({id:Date.now(),category:"",items:""});
+  renderEditor(); renderPreview();
+}
+function removeSkill(i){ state.skills.splice(i,1); renderEditor(); renderPreview(); }
+
+function addCertif(){
+  state.certifications.push({id:Date.now(),name:"",issuer:"",date:""});
+  renderEditor(); renderPreview();
+}
+function removeCertif(i){ state.certifications.splice(i,1); renderEditor(); renderPreview(); }
+
+// ==============================
+// CV PREVIEW RENDERING
+// ==============================
+function renderPreview(){
+  const p = state.personal;
+  const v = state.visibility;
+  let html = '';
+
+  // Header
+  html += `<div class="cv-name">${esc(p.name)||'Votre Nom'}</div>`;
+  if(p.title) html += `<div class="cv-title">${esc(p.title)}</div>`;
+  const contacts = [p.email, p.phone, p.location, p.linkedin, p.github].filter(Boolean);
+  html += `<div class="cv-contact"><div class="cv-contact-row">${contacts.map((c,i)=>`<span class="cv-contact-item"${i===0?' style="margin-left:0"':''}>${esc(c)}</span>`).join('')}</div></div>`;
+
+  // Summary
+  if(v.summary && state.summary){
+    html += `<div class="cv-section"><div class="cv-section-title">Profil</div><p class="cv-summary">${esc(state.summary)}</p></div>`;
+  }
+
+  // Experience
+  if(v.experiences && state.experiences.length){
+    html += `<div class="cv-section"><div class="cv-section-title">Expériences professionnelles</div>`;
+    state.experiences.forEach(exp => {
+      html += `<div class="cv-exp">
+        <div class="cv-exp-header">
+          <span class="cv-exp-title">${esc(exp.title)||'Poste'}</span>
+          <span class="cv-exp-dates">${[exp.start,exp.end].filter(Boolean).join(' – ')}</span>
+        </div>
+        <div class="cv-exp-company">${esc(exp.company)||'Entreprise'}${exp.location?` · ${esc(exp.location)}`:''}</div>
+        ${exp.bullets.filter(b=>b.trim()).length?`<ul class="cv-bullets">${exp.bullets.filter(b=>b.trim()).map(b=>{const r=esc(b);const s=r.indexOf(' : ');if(s===-1)return `<li>${r}</li>`;return `<li><span style="font-weight:700;color:blue">${r.slice(0,s)}</span><span style="color:#444"> : ${r.slice(s+3)}</span></li>`;}).join('')}</ul>`:''}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Education
+  if(v.education && state.education.length){
+    html += `<div class="cv-section"><div class="cv-section-title">Formation</div>`;
+    state.education.forEach(e => {
+      html += `<div class="cv-edu">
+        <div class="cv-edu-header">
+          <span class="cv-edu-school">${esc(e.school)||'Établissement'}</span>
+          <span class="cv-edu-dates">${[e.start,e.end].filter(Boolean).join(' – ')}</span>
+        </div>
+        <div class="cv-edu-degree">${esc(e.degree)||'Diplôme'}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Skills
+  if(v.skills && state.skills.length){
+    html += `<div class="cv-section"><div class="cv-section-title">Compétences</div>`;
+    state.skills.filter(s=>s.category||s.items).forEach(s => {
+      html += `<div class="cv-skill-row"><span class="cv-skill-cat">${esc(s.category)}</span><span class="cv-skill-items">${esc(s.items)}</span></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Certifications
+  if(v.certifications && state.certifications.length){
+    html += `<div class="cv-section"><div class="cv-section-title">Certifications</div>`;
+    state.certifications.filter(c=>c.name).forEach(c => {
+      html += `<div class="cv-certif"><strong>${esc(c.name)}</strong>${c.issuer?` - ${esc(c.issuer)}`:''}${c.date?` (${esc(c.date)})`:''}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('cvPreview').innerHTML = html;
+  saveState();
+}
+
+// ==============================
+// COPY PLAIN TEXT (ATS)
+// ==============================
+function copyAtsText(){
+  const p = state.personal;
+  const v = state.visibility;
+  let txt = '';
+
+  txt += (p.name||'').toUpperCase() + '\n';
+  if(p.title) txt += p.title + '\n';
+  txt += [p.email,p.phone,p.location,p.linkedin,p.github].filter(Boolean).join(' | ') + '\n\n';
+
+  if(v.summary && state.summary){
+    txt += 'PROFIL\n' + '-'.repeat(30) + '\n' + state.summary + '\n\n';
+  }
+
+  if(v.experiences && state.experiences.length){
+    txt += 'EXPÉRIENCES PROFESSIONNELLES\n' + '-'.repeat(30) + '\n';
+    state.experiences.forEach(exp => {
+      txt += `${exp.title||'Poste'} | ${exp.company||'Entreprise'} | ${[exp.start,exp.end].filter(Boolean).join(' – ')}\n`;
+      exp.bullets.filter(b=>b.trim()).forEach(b => txt += `• ${b}\n`);
+      txt += '\n';
+    });
+  }
+
+  if(v.education && state.education.length){
+    txt += 'FORMATION\n' + '-'.repeat(30) + '\n';
+    state.education.forEach(e => {
+      txt += `${e.school||'Établissement'} | ${e.degree||'Diplôme'} | ${[e.start,e.end].filter(Boolean).join(' – ')}\n`;
+    });
+    txt += '\n';
+  }
+
+  if(v.skills && state.skills.length){
+    txt += 'COMPÉTENCES\n' + '-'.repeat(30) + '\n';
+    state.skills.filter(s=>s.items).forEach(s => {
+      txt += `${s.category} : ${s.items}\n`;
+    });
+    txt += '\n';
+  }
+
+  if(v.certifications && state.certifications.length){
+    txt += 'CERTIFICATIONS\n' + '-'.repeat(30) + '\n';
+    state.certifications.filter(c=>c.name).forEach(c => {
+      txt += `${c.name}${c.issuer?' - '+c.issuer:''}${c.date?' ('+c.date+')':''}\n`;
+    });
+  }
+
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copié !';
+    btn.style.background = '#e8f0e8';
+    setTimeout(()=>{ btn.textContent=orig; btn.style.background=''; },2000);
+  }).catch(()=> alert('Copiez manuellement depuis l\'aperçu'));
+}
+
+// ==============================
+// UTIL
+// ==============================
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ==============================
+// PERSISTENCE
+// ==============================
+const STORAGE_KEY = 'cv_editor_state_v1';
+
+function saveState(){
+  try{
+    const toSave = {...state};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  }catch(e){}
+}
+
+function loadState(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved){
+      const parsed = JSON.parse(saved);
+      Object.assign(state, parsed);
+      state.activeSection = state.activeSection || 'personal';
+    }
+  }catch(e){}
+}
+
+// ==============================
+// INIT
+// ==============================
+loadState();
+renderNav();
+renderEditor();
+renderPreview();
+</script>
+</body>
+</html>
