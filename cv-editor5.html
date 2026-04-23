@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Éditeur CV - ATS Compatible</title>
+<title>Éditeur CV — ATS Compatible</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&family=Raleway:wght@600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -96,8 +96,8 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);min-heigh
 .cv-title{font-size:13px;color:#555;font-weight:400;margin-bottom:10px;font-style:italic}
 .cv-contact{font-size:11.5px;color:#444;line-height:1.8;margin-bottom:0}
 .cv-contact-row{display:flex;flex-wrap:wrap;gap:4px 20px}
-.cv-contact-item::before{content:'• ';color:#ff0000}
-.cv-contact-item:first-child::before{content:''}
+.cv-contact-item::before{content:'';color:#888}
+.cv-contact-item.cv-contact-link::before{content:'• ';color:#ff0000}
 
 /* Section */
 .cv-section{margin-top:22px}
@@ -228,11 +228,11 @@ let state = {
   },
   summary: "Étudiant en informatique à Epitech en alternance en tant que développeur VR, je me reconvertis vers les métiers de la Business Intelligence et de l'analyse de données. Reconnu pour mes qualités de communication et de vulgarisation technique, j'ai accompagné des équipes commerciales lors de démonstrations clients en salon et en entreprise. Mon background dev me confère une approche structurée et analytique, que je mets au service de la data.",
   experiences: [
-    {id:1, company:"Nom de l'entreprise", title:"Développeur VR - Alternant", location:"Paris", start:"Sept. 2023", end:"Présent",
+    {id:1, company:"Nom de l'entreprise", title:"Développeur VR — Alternant", location:"Paris", start:"Sept. 2023", end:"Présent",
      bullets:["Développement d'applications VR pour des clients entreprises (secteurs industrie, formation)","Accompagnement des équipes lors de démonstrations produits en salons professionnels et en clientèle directe","Vulgarisation des aspects techniques auprès des profils commerciaux et des décideurs non-techniques","Contribution à la conception de scénarios d'expérience utilisateur (UX) en réalité virtuelle"]}
   ],
   education: [
-    {id:1, school:"Epitech - École Européenne d'Informatique", degree:"Expert en Technologies de l'Information (Bac+5)", location:"Paris", start:"2021", end:"2026"}
+    {id:1, school:"Epitech — École Européenne d'Informatique", degree:"Expert en Technologies de l'Information (Bac+5)", location:"Paris", start:"2021", end:"2026"}
   ],
   skills: [
     {id:1, category:"Développement", items:"C++, Python, Git / GitHub, Unity, Unreal Engine"},
@@ -487,8 +487,9 @@ function renderPreview(){
   // Header
   html += `<div class="cv-name">${esc(p.name)||'Votre Nom'}</div>`;
   if(p.title) html += `<div class="cv-title">${esc(p.title)}</div>`;
+  const links = [p.linkedin, p.github].filter(Boolean);
   const contacts = [p.email, p.phone, p.location, p.linkedin, p.github].filter(Boolean);
-  html += `<div class="cv-contact"><div class="cv-contact-row">${contacts.map((c,i)=>`<span class="cv-contact-item"${i===0?' style="margin-left:0"':''}>${esc(c)}</span>`).join('')}</div></div>`;
+  html += `<div class="cv-contact"><div class="cv-contact-row">${contacts.map((c,i)=>`<span class="cv-contact-item${links.includes(c)?' cv-contact-link':''}"${i===0?' style="margin-left:0"':''}>${esc(c)}</span>`).join('')}</div></div>`;
 
   // Summary
   if(v.summary && state.summary){
@@ -539,7 +540,7 @@ function renderPreview(){
   if(v.certifications && state.certifications.length){
     html += `<div class="cv-section"><div class="cv-section-title">Certifications</div>`;
     state.certifications.filter(c=>c.name).forEach(c => {
-      html += `<div class="cv-certif"><strong>${esc(c.name)}</strong>${c.issuer?` - ${esc(c.issuer)}`:''}${c.date?` (${esc(c.date)})`:''}</div>`;
+      html += `<div class="cv-certif"><strong>${esc(c.name)}</strong>${c.issuer?` — ${esc(c.issuer)}`:''}${c.date?` (${esc(c.date)})`:''}</div>`;
     });
     html += `</div>`;
   }
@@ -592,7 +593,7 @@ function copyAtsText(){
   if(v.certifications && state.certifications.length){
     txt += 'CERTIFICATIONS\n' + '-'.repeat(30) + '\n';
     state.certifications.filter(c=>c.name).forEach(c => {
-      txt += `${c.name}${c.issuer?' - '+c.issuer:''}${c.date?' ('+c.date+')':''}\n`;
+      txt += `${c.name}${c.issuer?' — '+c.issuer:''}${c.date?' ('+c.date+')':''}\n`;
     });
   }
 
